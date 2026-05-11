@@ -1,13 +1,10 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
+@plugin "@iconify/tailwind4";
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --page-bg: #0f1116;
+  --page-text: #e9edf3;
+  --selection: #5d77ff;
 }
 
 html {
@@ -21,20 +18,25 @@ body {
 }
 
 body {
+  margin: 0;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--page-text);
+  background:
+    radial-gradient(circle at 24% -8%, rgba(57, 109, 255, 0.12), transparent 40%),
+    radial-gradient(circle at 83% 0%, rgba(86, 146, 101, 0.08), transparent 38%),
+    var(--page-bg);
+  font-family: "Soehne", "Avenir Next", "SF Pro Text", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+/* Don't zero `padding` on `*` — it fights Tailwind utilities (buttons, inputs). */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
@@ -42,8 +44,7 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+::selection {
+  background: var(--selection);
+  color: #f4f7ff;
 }

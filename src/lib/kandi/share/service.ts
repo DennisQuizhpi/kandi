@@ -10,7 +10,6 @@ import type {
   SharedPostcardRecord,
 } from "./types";
 import {
-  ShareValidationError,
   cloneDesignSnapshot,
   normalizeShareText,
   validateDesignSnapshot,
@@ -42,13 +41,6 @@ export async function publishPostcardShare(
   validateDesignSnapshot(input.design);
   const normalized = normalizeShareText(input);
   const repository = options.repository ?? getShareRepository();
-
-  if (normalized.backgroundAssetId) {
-    const background = await repository.getBackgroundAssetRecord(normalized.backgroundAssetId);
-    if (!background) {
-      throw new ShareValidationError("Background image not found.");
-    }
-  }
 
   const snapshot = cloneDesignSnapshot(input.design);
   const record = await repository.publishShare({

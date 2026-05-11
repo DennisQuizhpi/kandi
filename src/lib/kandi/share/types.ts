@@ -6,6 +6,7 @@ export interface BackgroundAssetRecord {
   fileExtension: "png" | "jpg" | "webp";
   byteSize: number;
   createdAt: string;
+  blobUrl?: string;
   width?: number;
   height?: number;
 }

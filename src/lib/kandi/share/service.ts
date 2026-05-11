@@ -1,5 +1,6 @@
 import { LocalFsShareRepository, defaultShareDataRoot } from "./localFsRepository";
 import { isValidShareSlug } from "./slug";
+import { VercelBlobShareRepository } from "./vercelBlobRepository";
 import type {
   BackgroundAssetRef,
   PostcardShareRecord,
@@ -19,8 +20,13 @@ let defaultRepository: ShareRepository | null = null;
 
 export function getShareRepository(): ShareRepository {
   if (!defaultRepository) {
-    const dataRoot = process.env.KANDI_SHARE_DATA_DIR?.trim() || defaultShareDataRoot();
-    defaultRepository = new LocalFsShareRepository(dataRoot);
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+    if (blobToken) {
+      defaultRepository = new VercelBlobShareRepository(blobToken);
+    } else {
+      const dataRoot = process.env.KANDI_SHARE_DATA_DIR?.trim() || defaultShareDataRoot();
+      defaultRepository = new LocalFsShareRepository(dataRoot);
+    }
   }
   return defaultRepository;
 }

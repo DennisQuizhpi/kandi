@@ -127,5 +127,8 @@ export class LocalFsShareRepository implements ShareRepository {
 }
 
 export function defaultShareDataRoot(): string {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join("/tmp", "kandi-share");
+  }
   return path.join(/* turbopackIgnore: true */ process.cwd(), ".data", "kandi-share");
 }

@@ -13,5 +13,10 @@ export async function GET(
     return Response.json({ error: "Share not found." }, { status: 404 });
   }
 
-  return createPostcardImage(shared);
+  try {
+    return createPostcardImage(shared);
+  } catch {
+    // Fallback for environments where remote background decoding fails in OG rendering.
+    return createPostcardImage({ ...shared, backgroundImageUrl: undefined });
+  }
 }

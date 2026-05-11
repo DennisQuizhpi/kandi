@@ -84,30 +84,7 @@ export function createPostcardImage(record: SharedPostcardRecord): ImageResponse
           color: "#eef2fa",
         }}
       >
-        {record.backgroundImageUrl ? (
-          <>
-            <img
-              src={record.backgroundImageUrl}
-              alt=""
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0.85,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "linear-gradient(90deg, rgba(10,12,17,0.88) 0%, rgba(10,12,17,0.65) 55%, rgba(10,12,17,0.74) 100%)",
-              }}
-            />
-          </>
-        ) : null}
+        {/* Temporarily avoid external image composition in OG rendering due runtime instability. */}
 
         <div
           style={{

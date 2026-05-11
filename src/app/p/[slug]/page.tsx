@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -84,11 +83,9 @@ export default async function SharedPostcardPage({
         <section className="overflow-hidden rounded-2xl border border-[#ffffff1a] bg-[#161a22d4] shadow-[0_18px_54px_rgba(0,0,0,0.46)] backdrop-blur-xl">
           <div className="grid gap-0 lg:grid-cols-[1fr_24rem]">
             <div className="border-b border-[#ffffff14] p-3 lg:border-r lg:border-b-0 lg:p-4">
-              <Image
+              <img
                 src={postcardUrl}
                 alt={shared.title}
-                width={1200}
-                height={630}
                 className="h-auto w-full rounded-xl border border-[#ffffff14] object-cover"
               />
             </div>

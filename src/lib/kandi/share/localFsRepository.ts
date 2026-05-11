@@ -100,6 +100,7 @@ export class LocalFsShareRepository implements ShareRepository {
       fileExtension,
       byteSize: input.bytes.byteLength,
       createdAt,
+      blobUrl: undefined,
     };
 
     await mkdir(this.assetsDir, { recursive: true });

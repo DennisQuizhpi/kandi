@@ -28,7 +28,7 @@ export async function POST(request: Request): Promise<Response> {
       mimeType: file.type,
     });
 
-    return Response.json(toBackgroundAssetRef(record.assetId, originFromRequest(request)), { status: 201 });
+    return Response.json(toBackgroundAssetRef(record.assetId, originFromRequest(request), record.blobUrl), { status: 201 });
   } catch (error) {
     return handleRouteError(error);
   }

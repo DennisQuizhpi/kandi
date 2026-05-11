@@ -101,21 +101,21 @@ export class VercelBlobShareRepository implements ShareRepository {
   }): Promise<BackgroundAssetRecord> {
     const fileExtension = ASSET_EXT_BY_MIME[input.mimeType];
     const assetId = createAssetId();
-    const record: BackgroundAssetRecord = {
-      assetId,
-      mimeType: input.mimeType,
-      fileExtension,
-      byteSize: input.bytes.byteLength,
-      createdAt: nowIso(),
-    };
-
-    await put(assetDataPath(assetId, fileExtension), Buffer.from(input.bytes), {
+    const dataBlob = await put(assetDataPath(assetId, fileExtension), Buffer.from(input.bytes), {
       token: this.token,
       access: "public",
       addRandomSuffix: false,
       allowOverwrite: false,
       contentType: input.mimeType,
     });
+    const record: BackgroundAssetRecord = {
+      assetId,
+      mimeType: input.mimeType,
+      fileExtension,
+      byteSize: input.bytes.byteLength,
+      createdAt: nowIso(),
+      blobUrl: dataBlob.url,
+    };
     await put(assetMetaPath(assetId), JSON.stringify(record), {
       token: this.token,
       access: "public",

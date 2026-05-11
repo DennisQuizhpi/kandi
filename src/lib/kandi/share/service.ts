@@ -79,25 +79,35 @@ export async function getSharedPostcard(
     return null;
   }
 
-  return toSharedPostcardRecord(record, options.origin);
+  let backgroundImageUrl: string | undefined;
+  if (record.backgroundAssetId) {
+    const background = await repository.getBackgroundAssetRecord(record.backgroundAssetId);
+    backgroundImageUrl = background?.blobUrl ?? `${options.origin}/api/share/assets/${record.backgroundAssetId}`;
+  }
+
+  return toSharedPostcardRecord(record, options.origin, backgroundImageUrl);
 }
 
-export function toSharedPostcardRecord(record: PostcardShareRecord, origin: string): SharedPostcardRecord {
+export function toSharedPostcardRecord(
+  record: PostcardShareRecord,
+  origin: string,
+  backgroundImageUrl?: string,
+): SharedPostcardRecord {
   return {
     slug: record.slug,
     design: record.design,
     title: record.title,
     message: record.message,
-    backgroundImageUrl: record.backgroundAssetId
-      ? `${origin}/api/share/assets/${record.backgroundAssetId}`
-      : undefined,
+    backgroundImageUrl:
+      backgroundImageUrl ??
+      (record.backgroundAssetId ? `${origin}/api/share/assets/${record.backgroundAssetId}` : undefined),
     createdAt: record.createdAt,
   };
 }
 
-export function toBackgroundAssetRef(assetId: string, origin: string): BackgroundAssetRef {
+export function toBackgroundAssetRef(assetId: string, origin: string, blobUrl?: string): BackgroundAssetRef {
   return {
     assetId,
-    assetUrl: `${origin}/api/share/assets/${assetId}`,
+    assetUrl: blobUrl ?? `${origin}/api/share/assets/${assetId}`,
   };
 }

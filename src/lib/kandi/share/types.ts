@@ -30,7 +30,6 @@ export interface SharePublishInput {
 export interface SharePublishResult {
   slug: string;
   shareUrl: string;
-  postcardUrl: string;
 }
 
 export interface BackgroundAssetRef {

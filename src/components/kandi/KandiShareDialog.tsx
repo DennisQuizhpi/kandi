@@ -109,7 +109,7 @@ export function KandiShareDialog({
       });
       setPublishResult(result);
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "Failed to publish postcard.");
+      setError(nextError instanceof Error ? nextError.message : "Failed to publish share.");
     } finally {
       setPublishing(false);
     }
@@ -246,17 +246,6 @@ export function KandiShareDialog({
                     >
                       {copied ? "Link Copied" : "Copy Link"}
                     </KandiButton>
-                    <a
-                      href={publishResult.postcardUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={
-                        kandiButtonBaseClassName +
-                        " h-9 rounded-lg border-[#ffffff24] bg-[#202633bf] px-3 py-2 text-[0.74rem] text-[#e6ebf6]"
-                      }
-                    >
-                      Download PNG
-                    </a>
                   </div>
                 </div>
               ) : null}

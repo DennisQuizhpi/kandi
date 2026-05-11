@@ -61,7 +61,6 @@ export async function publishPostcardShare(
   return {
     slug: record.slug,
     shareUrl: `${options.origin}/p/${record.slug}`,
-    postcardUrl: `${options.origin}/api/share/${record.slug}/postcard`,
   };
 }
 

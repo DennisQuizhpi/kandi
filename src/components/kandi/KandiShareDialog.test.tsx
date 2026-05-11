@@ -29,7 +29,6 @@ describe("KandiShareDialog", () => {
     publishShareMock.mockResolvedValue({
       slug: "abcdefghjk",
       shareUrl: "http://localhost:3000/p/abcdefghjk",
-      postcardUrl: "http://localhost:3000/api/share/abcdefghjk/postcard",
     });
     uploadShareBackgroundMock.mockResolvedValue({
       assetId: "asset-123",

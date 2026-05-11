@@ -11,13 +11,13 @@ function beadsPreview(beadColors: string[]) {
       style={{
         position: "relative",
         display: "flex",
-        width: 360,
-        height: 360,
+        width: 320,
+        height: 320,
         borderRadius: "50%",
         alignItems: "center",
         justifyContent: "center",
         border: "4px solid rgba(20,24,30,0.56)",
-        boxShadow: "inset 0 0 0 10px rgba(255,255,255,0.06), 0 18px 48px rgba(0,0,0,0.42)",
+        boxShadow: "0 18px 48px rgba(0,0,0,0.42)",
         background: "rgba(16,18,23,0.3)",
       }}
     >
@@ -32,7 +32,7 @@ function beadsPreview(beadColors: string[]) {
       >
         {beadColors.slice(0, 40).map((color, index) => {
           const angle = (index / Math.max(beadColors.length, 1)) * Math.PI * 2;
-          const radius = 150;
+          const radius = 132;
           const x = Math.cos(angle) * radius;
           const y = Math.sin(angle) * radius;
 
@@ -41,10 +41,10 @@ function beadsPreview(beadColors: string[]) {
               key={`${index}-${color}`}
               style={{
                 position: "absolute",
-                left: 180 + x - 14,
-                top: 180 + y - 14,
-                width: 28,
-                height: 28,
+                left: 160 + x - 12,
+                top: 160 + y - 12,
+                width: 24,
+                height: 24,
                 borderRadius: "50%",
                 background: color,
                 border: "2px solid rgba(255,255,255,0.75)",
@@ -56,8 +56,8 @@ function beadsPreview(beadColors: string[]) {
       </div>
       <div
         style={{
-          width: 86,
-          height: 86,
+          width: 70,
+          height: 70,
           borderRadius: "50%",
           border: "2px solid rgba(255,255,255,0.24)",
           background: "rgba(8,10,14,0.52)",
@@ -139,8 +139,7 @@ export function createPostcardImage(record: SharedPostcardRecord): ImageResponse
                 lineHeight: "70px",
                 fontWeight: 700,
                 letterSpacing: "-0.03em",
-                display: "flex",
-                textWrap: "balance",
+                display: "block",
               }}
             >
               {record.title}
@@ -152,8 +151,7 @@ export function createPostcardImage(record: SharedPostcardRecord): ImageResponse
                   fontSize: 31,
                   lineHeight: "40px",
                   color: "#d8deeb",
-                  display: "flex",
-                  textWrap: "balance",
+                  display: "block",
                 }}
               >
                 {record.message}
@@ -179,7 +177,6 @@ export function createPostcardImage(record: SharedPostcardRecord): ImageResponse
               borderRadius: 30,
               border: "1px solid rgba(255,255,255,0.24)",
               background: "rgba(16,18,23,0.34)",
-              backdropFilter: "blur(4px)",
             }}
           >
             {beadsPreview(beadColors)}

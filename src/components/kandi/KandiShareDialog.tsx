@@ -145,12 +145,12 @@ export function KandiShareDialog({
             exit={{ opacity: 0, y: 8, scale: 0.985 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             role="dialog"
-            aria-label="Share postcard"
+            aria-label="Share design"
             aria-modal="true"
           >
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[1.05rem] font-semibold tracking-[-0.02em] text-[#f0f3f9]">
-                Share Postcard
+                Share Design
               </h2>
               <KandiButton
                 variant="secondary"
@@ -170,7 +170,7 @@ export function KandiShareDialog({
                   maxLength={SHARE_TITLE_CHAR_LIMIT}
                   onChange={(event) => setTitle(event.currentTarget.value)}
                   className="w-full rounded-xl border border-[#ffffff1c] bg-[#20242da8] px-3 py-2.5 text-[0.9rem] text-[#eef2fa] outline-none focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#5d77ff99]"
-                  placeholder="Give this postcard a title"
+                  placeholder="Give this share a title"
                 />
               </label>
 
@@ -181,7 +181,7 @@ export function KandiShareDialog({
                   maxLength={SHARE_MESSAGE_CHAR_LIMIT}
                   onChange={(event) => setMessage(event.currentTarget.value)}
                   className="min-h-[5.6rem] w-full resize-y rounded-xl border border-[#ffffff1c] bg-[#20242da8] px-3 py-2.5 text-[0.88rem] text-[#eef2fa] outline-none focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#5d77ff99]"
-                  placeholder="Optional note for the postcard"
+                  placeholder="Optional note for this share"
                 />
               </label>
 
@@ -261,7 +261,7 @@ export function KandiShareDialog({
                 onClick={onPublish}
                 disabled={shareDisabled}
               >
-                {publishing ? "Publishing..." : "Publish Postcard"}
+                {publishing ? "Publishing..." : "Publish Share"}
               </KandiButton>
             </div>
           </motion.div>

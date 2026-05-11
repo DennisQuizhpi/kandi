@@ -67,10 +67,6 @@ export class VercelBlobShareRepository implements ShareRepository {
   async publishShare(input: SharePublishInput): Promise<PostcardShareRecord> {
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const slug = createShareSlug();
-      const existing = await this.getShare(slug);
-      if (existing) {
-        continue;
-      }
       const record: PostcardShareRecord = {
         slug,
         design: input.design,
@@ -79,14 +75,26 @@ export class VercelBlobShareRepository implements ShareRepository {
         backgroundAssetId: input.backgroundAssetId,
         createdAt: nowIso(),
       };
-      await put(sharePath(slug), JSON.stringify(record), {
-        token: this.token,
-        access: "public",
-        addRandomSuffix: false,
-        allowOverwrite: false,
-        contentType: "application/json",
-      });
-      return record;
+      try {
+        await put(sharePath(slug), JSON.stringify(record), {
+          token: this.token,
+          access: "public",
+          addRandomSuffix: false,
+          allowOverwrite: false,
+          contentType: "application/json",
+        });
+        return record;
+      } catch (error) {
+        // Slug collision is rare; retry with a new slug. For any other blob write issue, fail fast.
+        if (
+          error instanceof Error &&
+          (error.message.toLowerCase().includes("already exists") ||
+            error.message.toLowerCase().includes("overwrite"))
+        ) {
+          continue;
+        }
+        throw error;
+      }
     }
     throw new Error("Unable to allocate share slug. Please try again.");
   }

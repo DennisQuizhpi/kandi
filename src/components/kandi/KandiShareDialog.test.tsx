@@ -45,7 +45,7 @@ describe("KandiShareDialog", () => {
       expect(uploadShareBackgroundMock).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Publish Postcard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Publish Share" }));
 
     await waitFor(() => {
       expect(publishShareMock).toHaveBeenCalled();

@@ -881,7 +881,6 @@ export function KandiEditor({
         onDismissSelection={clearCanvasSelection}
       />
       <KandiShareDialog
-        key={shareDialogOpen ? state.design.id : "share-closed"}
         open={shareDialogOpen}
         design={state.design}
         onClose={() => setShareDialogOpen(false)}

@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { KandiButton } from "@/components/kandi/KandiButton";
-import { kandiMotionDuration, kandiMotionTransition } from "@/lib/kandi/motion";
 import { kandiElevatedSurfaceClassName } from "@/lib/kandi/constants";
+import { kandiMotionDuration, kandiMotionTransition } from "@/lib/kandi/motion";
 import { SHARE_MESSAGE_CHAR_LIMIT, SHARE_TITLE_CHAR_LIMIT } from "@/lib/kandi/share/validation";
 import type { KandiDesign } from "@/lib/kandi/types";
 
@@ -28,6 +28,14 @@ export function KandiShareDialog({
   const [title, setTitle] = useState(design.name);
   const [message, setMessage] = useState("");
   const shellRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setTitle(design.name);
+    setMessage("");
+  }, [open, design.id, design.name]);
 
   useEffect(() => {
     if (!open) {
@@ -84,9 +92,9 @@ export function KandiShareDialog({
           <motion.div
             ref={shellRef}
             className={`w-full max-w-[34rem] rounded-2xl p-4 sm:p-6 ${kandiElevatedSurfaceClassName}`}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 5 }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={kandiMotionTransition.fast}
             role="dialog"
             aria-label="Share design"

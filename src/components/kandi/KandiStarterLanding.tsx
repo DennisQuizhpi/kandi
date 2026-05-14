@@ -24,6 +24,31 @@ const REMIX_CURSOR = `url("data:image/svg+xml;utf8,${encodeURIComponent(
   </svg>`,
 )}") 56 22, pointer`;
 
+function MotionTextReveal({ text }: { text: string }) {
+  const prefersReducedMotion = useReducedMotion();
+  const letters = text.split("");
+
+  if (prefersReducedMotion) {
+    return <>{text}</>;
+  }
+
+  return (
+    <span className="inline-flex" aria-label={text}>
+      {letters.map((letter, index) => (
+        <motion.span
+          key={`${letter}-${index}`}
+          aria-hidden="true"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: ENTRANCE_EASE, delay: 0.15 + index * 0.055 }}
+        >
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
+
 function BraceletPreview({ preset, className = "h-[154px] w-[206px]" }: { preset: StarterPreset; className?: string }) {
   const src = PRESET_PREVIEW_IMAGE_BY_ID[preset.id] ?? PRESET_PREVIEW_IMAGE_BY_ID.starlight;
   const prefersReducedMotion = useReducedMotion();
@@ -222,11 +247,11 @@ export function KandiStarterLanding({
             className="select-none text-[clamp(5.2rem,12vw,15rem)] leading-none font-semibold tracking-[0.08em] text-[#101318]"
             style={{ fontFamily: "Avenir Next, Soehne, system-ui, sans-serif" }}
           >
-            PLUR
+            <MotionTextReveal text="PLUR" />
           </h1>
           <KandiButton
-            variant="secondary"
-            className="h-12 rounded-lg border border-[#f2f2f2] bg-[#f9fcff] px-5 text-[16px] leading-6 font-semibold text-[#101318] shadow-[0_14px_24px_rgba(0,0,0,0.14)] hover:bg-[#f1f3f7]"
+            variant="primary"
+            size="xl"
             style={{ fontFamily: "Avenir Next, Soehne, system-ui, sans-serif" }}
             onClick={onStartBlank}
           >

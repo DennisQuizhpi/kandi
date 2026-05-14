@@ -19,17 +19,23 @@ const variantClassName = {
 } as const;
 
 export type KandiButtonVariant = keyof typeof variantClassName;
+const sizeClassName = {
+  md: "px-3 py-2 text-sm",
+  xl: "h-14 rounded-xl px-7 !text-md leading-7 font-semibold",
+} as const;
+export type KandiButtonSize = keyof typeof sizeClassName;
 
 export function KandiButton({
   variant,
+  size = "md",
   className,
   ...props
-}: ComponentProps<"button"> & { variant: KandiButtonVariant }) {
+}: ComponentProps<"button"> & { variant: KandiButtonVariant; size?: KandiButtonSize }) {
   const extra = className ? ` ${className}` : "";
   return (
     <button
       type="button"
-      className={`${kandiButtonBaseClassName} ${variantClassName[variant]}${extra}`}
+      className={`${kandiButtonBaseClassName} ${sizeClassName[size]} ${variantClassName[variant]}${extra}`}
       {...props}
     />
   );

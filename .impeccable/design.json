@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-12T00:00:00.000Z",
+  "title": "Design System: Kandi",
+  "extensions": {
+    "colorMeta": {
+      "page-bg": {
+        "role": "neutral",
+        "displayName": "Night Canvas",
+        "canonical": "#0f1116",
+        "tonalRamp": ["#08090c", "#0d0f13", "#12151b", "#181c24", "#222734", "#31384a", "#515b75", "#8d97b0"]
+      },
+      "page-text": {
+        "role": "neutral",
+        "displayName": "Mist Text",
+        "canonical": "#e9edf3",
+        "tonalRamp": ["#1a1d23", "#2a303a", "#3e4758", "#57627a", "#75819d", "#9eaac3", "#c8d2e2", "#eef2f8"]
+      },
+      "selection-accent": {
+        "role": "primary",
+        "displayName": "Workbench Blue",
+        "canonical": "#5d77ff",
+        "tonalRamp": ["#111a3c", "#1b295c", "#25397f", "#304aa5", "#405fd0", "#5d77ff", "#8fa1ff", "#c9d2ff"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Dialog and panel headings." },
+      "headline": { "displayName": "Headline", "purpose": "Section-level labels." },
+      "title": { "displayName": "Title", "purpose": "Action and control text." },
+      "body": { "displayName": "Body", "purpose": "Input and helper content." },
+      "label": { "displayName": "Label", "purpose": "Field labels and metadata." }
+    },
+    "shadows": [
+      { "name": "panel-lift", "value": "0 24px 64px rgba(0,0,0,0.5)", "purpose": "Dialog shell and high overlays." },
+      { "name": "panel-ambient", "value": "0 22px 48px rgba(0,0,0,0.42)", "purpose": "Persistent dock surfaces." },
+      { "name": "control-hover", "value": "0 8px 16px rgba(0,0,0,0.28)", "purpose": "Interactive button hover feedback." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default interface easing." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Control hover and press states." },
+      { "name": "duration-overlay", "value": "180ms", "purpose": "Overlay and panel transitions." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action button for share, confirm, and publish flows.",
+      "html": "<button class=\"ds-btn-primary\">Publish Share</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; border: 1px solid #ffffff4a; border-radius: 0.58rem; padding: 0.625rem 0.9rem; background: #ffffffe8; color: #101318; font-family: 'Soehne','Avenir Next','SF Pro Text','Segoe UI',sans-serif; font-size: 0.8125rem; font-weight: 600; line-height: 1.35; letter-spacing: 0.01em; cursor: pointer; transition: background 150ms cubic-bezier(0.22,1,0.36,1), border-color 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-primary:hover { background: #ffffff; border-color: #ffffff66; box-shadow: 0 8px 16px rgba(0,0,0,0.28); } .ds-btn-primary:focus-visible { outline: 2px solid #5d77ff99; outline-offset: 1px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Low-emphasis action for cancel and utility controls.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem; border: 1px solid transparent; border-radius: 0.58rem; padding: 0.625rem 0.9rem; background: transparent; color: #d9dee8; font-family: 'Soehne','Avenir Next','SF Pro Text','Segoe UI',sans-serif; font-size: 0.8125rem; font-weight: 600; line-height: 1.35; letter-spacing: 0.01em; cursor: pointer; transition: background 150ms cubic-bezier(0.22,1,0.36,1), color 150ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-secondary:hover { background: #ffffff08; } .ds-btn-secondary:focus-visible { outline: 2px solid #5d77ff99; outline-offset: 1px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field-default",
+      "description": "Single-line input style for title and text entry controls.",
+      "html": "<input class=\"ds-input\" placeholder=\"Give this share a title\" />",
+      "css": ".ds-input { width: 100%; border: 1px solid #ffffff1c; border-radius: 0.75rem; padding: 0.625rem 0.75rem; background: #20242da8; color: #eef2fa; font-family: 'Soehne','Avenir Next','SF Pro Text','Segoe UI',sans-serif; font-size: 0.9rem; font-weight: 500; line-height: 1.45; } .ds-input::placeholder { color: #95a0b4; } .ds-input:focus-visible { outline: 2px solid #5d77ff99; outline-offset: 1px; }"
+    },
+    {
+      "name": "Frosted Panel",
+      "kind": "card",
+      "refersTo": "panel-frosted",
+      "description": "Core shell used by docked and modal tool panels.",
+      "html": "<section class=\"ds-panel\"><h3 class=\"ds-panel-title\">Share Design</h3><p class=\"ds-panel-copy\">Publish and copy a link.</p></section>",
+      "css": ".ds-panel { border: 1px solid #ffffff17; border-radius: 0.92rem; padding: 1rem; background: #151920e6; color: #e9edf3; backdrop-filter: blur(20px); box-shadow: 0 24px 64px rgba(0,0,0,0.5); } .ds-panel-title { margin: 0 0 0.375rem; font-family: 'Soehne','Avenir Next','SF Pro Text','Segoe UI',sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; color: #f0f3f9; } .ds-panel-copy { margin: 0; font-family: 'Soehne','Avenir Next','SF Pro Text','Segoe UI',sans-serif; font-size: 0.88rem; line-height: 1.45; color: #bfc8d8; }"
+    },
+    {
+      "name": "Shortcut Keycap",
+      "kind": "custom",
+      "refersTo": "field-default",
+      "description": "Monospace keyboard hint token used in shortcut rows.",
+      "html": "<kbd class=\"ds-kbd\">Ctrl + D</kbd>",
+      "css": ".ds-kbd { display: inline-block; border: 1px solid #ffffff22; border-radius: 0.375rem; padding: 0.125rem 0.375rem; background: #171b26; color: #e7ecf8; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.72rem; line-height: 1.2; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Midnight Bead Bench",
+    "overview": "Kandi uses a night-studio atmosphere where the bracelet remains the hero, and controls stay calm, tight, and dependable. The visual language is compact and tactile, with frosted dark surfaces, precise borders, and one clear interaction accent. This system is built for fast creative iteration, not decorative spectacle. Typography carries most of the hierarchy work: semibold utility text, restrained size steps, and intentional tracking. Panels, dialogs, and chips should read as tools on a craft table, not marketing cards.",
+    "keyCharacteristics": [
+      "Quiet dark shell with restrained color accents.",
+      "Tight typographic hierarchy for utility-first workflows.",
+      "Frosted surfaces with subtle border contrast.",
+      "High-trust interaction states (focus, hover, disabled).",
+      "No templated AI look, every layer feels deliberate."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Blue accent exists for focus and selection, not decoration. If a surface can be understood without blue, keep it neutral.", "section": "colors" },
+      { "name": "The Utility Density Rule", "body": "Type scale stays compact and functional. Use weight contrast before large jumps in size.", "section": "typography" },
+      { "name": "The State-Driven Lift Rule", "body": "Shadows must explain interaction state or layer priority. Never add shadow as decoration.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do preserve the compact utility scale (0.77rem to 1.05rem) unless there is a clear hierarchy break.",
+      "Do keep focus rings explicit with #5d77ff99 and visible offsets.",
+      "Do keep primary actions light-on-dark with strong contrast and semibold text.",
+      "Do treat the bracelet editor as the hero, keep shell typography supportive and disciplined."
+    ],
+    "donts": [
+      "Don't ship AI slop patterns: generic gradient-heavy SaaS styling, repetitive interchangeable card grids, or decorative chrome without purpose.",
+      "Don't introduce gradient text, side-stripe accent borders, or default glassmorphism surfaces.",
+      "Don't flatten hierarchy by making every control the same size, weight, and spacing.",
+      "Don't hide critical state changes behind low-contrast hover-only cues."
+    ]
+  }
+}

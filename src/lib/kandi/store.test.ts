@@ -38,7 +38,7 @@ describe("store reducer", () => {
     expect(added.every((bead) => bead.color === "#ffffff" && bead.shape === "cube")).toBe(true);
   });
 
-  it("inserts a bead before and after target while preserving selection", () => {
+  it("inserts a bead before and after target while selecting the new bead", () => {
     const initial = createInitialState();
     const target = initial.design.beads[3];
     const selectedId = initial.design.beads[0].id;
@@ -46,8 +46,8 @@ describe("store reducer", () => {
 
     const withBefore = kandiReducer(selected, { type: "insertBeadBefore", beadId: target.id });
     expect(withBefore.design.beadCount).toBe(initial.design.beadCount + 1);
-    expect(withBefore.selection.selectedIds).toEqual([selectedId]);
     const beforeInserted = withBefore.design.beads[target.index];
+    expect(withBefore.selection.selectedIds).toEqual([beforeInserted.id]);
     expect(beforeInserted.shape).toBe("round");
     expect(beforeInserted.label).toBeUndefined();
     expect(beforeInserted.color).toBe(target.color);
@@ -58,6 +58,7 @@ describe("store reducer", () => {
     const withAfter = kandiReducer(withBefore, { type: "insertBeadAfter", beadId: shiftedTarget!.id });
     const targetAfter = withAfter.design.beads.findIndex((bead) => bead.id === shiftedTarget!.id);
     const afterInserted = withAfter.design.beads[targetAfter + 1];
+    expect(withAfter.selection.selectedIds).toEqual([afterInserted.id]);
     expect(afterInserted.shape).toBe("round");
     expect(afterInserted.label).toBeUndefined();
     expect(afterInserted.color).toBe(shiftedTarget!.color);
@@ -148,5 +149,19 @@ describe("store reducer", () => {
     expect(movedIds.slice(start, start + group.length)).toEqual(group);
     expect(start).toBe(3);
     expect(moved.selection.selectedIds).toEqual(group);
+  });
+
+  it("pastes a bead after the given id using a template", () => {
+    const initial = createInitialState();
+    const afterId = initial.design.beads[2].id;
+    const pasted = kandiReducer(initial, {
+      type: "pasteBeadAfter",
+      afterBeadId: afterId,
+      template: { color: "#ff0000", shape: "heart" },
+    });
+    expect(pasted.design.beads).toHaveLength(initial.design.beads.length + 1);
+    expect(pasted.design.beads[3].shape).toBe("heart");
+    expect(pasted.design.beads[3].color).toBe("#ff0000");
+    expect(pasted.selection.selectedIds).toEqual([pasted.design.beads[3].id]);
   });
 });

@@ -36,6 +36,37 @@ export function mergeSelectionIds(current: string[], next: string[], additive: b
   return [...set];
 }
 
+/** Bead id just outside the current selection on the ring (for shift+arrow range extend). */
+export function selectionExtentBoundaryId(
+  beads: Bead[],
+  selectedIds: string[],
+  direction: "next" | "prev",
+): string | null {
+  const n = beads.length;
+  if (n === 0 || selectedIds.length === 0) {
+    return null;
+  }
+
+  const indices: number[] = [];
+  for (const id of selectedIds) {
+    const bead = beads.find((b) => b.id === id);
+    if (bead !== undefined) {
+      indices.push(bead.index);
+    }
+  }
+  if (indices.length === 0) {
+    return null;
+  }
+
+  if (direction === "next") {
+    const maxIdx = Math.max(...indices);
+    return beads[(maxIdx + 1) % n]?.id ?? null;
+  }
+
+  const minIdx = Math.min(...indices);
+  return beads[(minIdx - 1 + n) % n]?.id ?? null;
+}
+
 /** Next/prior bead along ring index order (matches layout increasing angle). */
 export function adjacentBeadId(
   beads: Bead[],

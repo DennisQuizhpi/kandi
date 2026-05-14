@@ -4,19 +4,24 @@ import { motion } from "framer-motion";
 import type { RefObject } from "react";
 import { useEffect, useRef, useState } from "react";
 
-import { BASE_COLORS, LABEL_CHAR_LIMIT } from "@/lib/kandi/constants";
+import { BASE_COLORS, kandiElevatedSurfaceClassName, LABEL_CHAR_LIMIT } from "@/lib/kandi/constants";
+import { kandiMotionTransition } from "@/lib/kandi/motion";
 import type { Bead, EditPatch } from "@/lib/kandi/types";
 
 import { KandiButton, KandiColorSwatchButton } from "./KandiButton";
 
 const TEXT_BEAD_COLOR = "#ffffff";
 
-/** Mirrors `inputClassName` in KandiEditor for the same chrome on dark panels. */
+/** Mirrors `inputClassName` in KandiEditor for matching field chrome on elevated panels. */
 const beadBarFieldClassName =
-  "min-h-10 min-w-0 flex-1 rounded-[0.58rem] border border-[#ffffff1c] bg-[#20232996] px-3 py-2.5 font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[1rem] font-semibold uppercase tracking-[0.08em] text-[#eceff5] backdrop-blur-md outline-none placeholder:text-[#6b7380] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#5d77ff99]";
+  "min-h-10 min-w-0 flex-1 rounded-lg border-0 bg-[var(--field)] px-3 py-2 k-type-headline uppercase tracking-[0.08em] text-[var(--text-muted)] backdrop-blur-md outline-none transition-colors placeholder:text-[var(--text-muted)] hover:bg-[#f1f1f4] focus:text-[var(--text-strong)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[color-mix(in oklab, var(--accent) 72%, transparent)] disabled:cursor-not-allowed disabled:text-[var(--text-muted)]/70";
+
+/** Accent ring + primary text while the letter field is in edit mode (ready for input), not only during `:focus`. */
+const beadBarFieldReadyClassName =
+  "text-[var(--text-strong)] !outline !outline-2 !outline-offset-1 !outline-[color-mix(in oklab, var(--accent) 72%, transparent)]";
 
 const barShellClassName =
-  "pointer-events-auto flex w-[300px] max-w-[300px] flex-col gap-3 rounded-[0.92rem] border border-[#ffffff14] bg-[#1a1c21bd] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_22px_48px_rgba(0,0,0,0.42)] backdrop-blur-xl transition-opacity duration-150";
+  `pointer-events-auto flex w-[304px] max-w-[304px] flex-col gap-3 rounded-xl px-4 py-3 transition-opacity duration-150 ${kandiElevatedSurfaceClassName}`;
 
 const SWATCH_CLASS_BY_COLOR: Record<string, string> = {
   "#ff5c8a": "bg-[#ff5c8a]",
@@ -69,6 +74,7 @@ export function KandiSingleBeadBar({
   onApplyCopiedStyle,
   copiedStyleAvailable = false,
   onConfirmTextAndAdvance,
+  onAdvanceToNextBeadFromDock,
   onDismiss,
   dismissOnEscape = true,
   keepOpenOnPointerDownInsideRef,
@@ -81,6 +87,7 @@ export function KandiSingleBeadBar({
   onApplyCopiedStyle?: () => void;
   copiedStyleAvailable?: boolean;
   onConfirmTextAndAdvance: (beadId: string, label: string) => void;
+  onAdvanceToNextBeadFromDock: (beadId: string) => void;
   onDismiss: () => void;
   dismissOnEscape?: boolean;
   /** Clicks here (e.g. 3D canvas) must not dismiss — bead selection runs on `click` after `mousedown`. */
@@ -102,9 +109,9 @@ export function KandiSingleBeadBar({
     }
     whitenedForTextRef.current = null;
     setLabelDraft(bead.label ?? "");
-    setTextEntryActive(false);
-    // Intentionally bead.id only: avoid resetting drafts when this bead's label/color updates from edits.
-  }, [bead?.id]);
+    setTextEntryActive(mode === "text");
+    // Intentionally bead.id / mode: avoid resetting drafts when this bead's label/color updates from edits.
+  }, [bead?.id, mode]);
 
   useEffect(() => {
     if (!hasActiveBead || mode !== "text" || !textEntryActive) {
@@ -137,6 +144,31 @@ export function KandiSingleBeadBar({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [hasActiveBead, mode, textEntryActive]);
+
+  useEffect(() => {
+    if (!hasActiveBead || mode !== "color") {
+      return;
+    }
+    const beadId = bead?.id;
+    if (!beadId) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter") {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+      }
+      if (isTextInputFocused()) {
+        return;
+      }
+      event.preventDefault();
+      onAdvanceToNextBeadFromDock(beadId);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [hasActiveBead, mode, bead?.id, onAdvanceToNextBeadFromDock]);
 
   useEffect(() => {
     if (!bead) {
@@ -202,7 +234,6 @@ export function KandiSingleBeadBar({
     const label = labelDraft.trim().toUpperCase();
     setLabelDraft(label);
     onConfirmTextAndAdvance(bead.id, label);
-    setTextEntryActive(false);
   };
 
   return (
@@ -210,26 +241,29 @@ export function KandiSingleBeadBar({
       <motion.div
         ref={shellRef}
         layout
-        transition={{ layout: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+        transition={{ layout: kandiMotionTransition.standard }}
         className={hasActiveBead ? barShellClassName : barShellClassName.replace("pointer-events-auto", "pointer-events-none")}
       >
         {!hasActiveBead ? (
           <div
             role="status"
             aria-live="polite"
-            className="-mx-2 -my-2 flex min-h-[38px] items-center justify-center text-center font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[0.8rem] font-medium tracking-[0.02em] text-[#a8b0bf]"
+            className="-mx-2 -my-2 flex min-h-[38px] items-center justify-center text-center k-type-body tracking-[0.02em] text-[var(--text-muted)]"
+       
           >
-            Select a bead to edit its style.
+            Let's get creating...
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 border-b border-[#ffffff0d] pb-2">
-              <span className="truncate font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[0.8rem] font-medium tracking-[0.02em] text-[#cdd3df]">
-                {mode === "text" ? "Letter (white bead)" : "Color"}
+            <div className="flex min-h-8 min-w-0 items-center gap-2 justify-between border-b border-[var(--border-soft)] pb-2">
+              <span className="flex h-8 min-w-0 flex-1 items-center">
+                <span className="truncate k-type-title tracking-[0.02em] text-[var(--text-strong)]">
+                  {mode === "text" ? "Letter (white bead)" : "Color"}
+                </span>
               </span>
               <KandiButton
                 variant="secondary"
-                className="h-7 rounded-md border border-[#ffffff18] px-2 py-0 text-[0.66rem] font-medium tracking-[0.01em] text-[#c8d0de] hover:border-[#ffffff30] disabled:border-[#ffffff14] disabled:text-[#8f97a6]"
+                className="h-8 shrink-0 rounded-md border border-[var(--border-soft)] px-2.5 py-0 k-type-title leading-none text-[var(--text-strong)] hover:border-[var(--border-strong)] disabled:border-[var(--border-soft)] disabled:text-[var(--text-muted)]"
                 disabled={!copiedStyleAvailable}
                 onClick={() => onApplyCopiedStyle?.()}
               >
@@ -242,7 +276,7 @@ export function KandiSingleBeadBar({
               {mode === "text" ? (
                 <input
                   ref={textInputRef}
-                  className={beadBarFieldClassName}
+                  className={`${beadBarFieldClassName}${textEntryActive ? ` ${beadBarFieldReadyClassName}` : ""}`}
                   placeholder="A–Z or 0–9"
                   value={labelDraft}
                   maxLength={LABEL_CHAR_LIMIT}
@@ -286,7 +320,7 @@ export function KandiSingleBeadBar({
                   </div>
                   <input
                     type="color"
-                    className="h-10 w-[3.65rem] shrink-0 cursor-pointer rounded-[0.5rem] border border-[#ffffff1c] bg-[#25283096] p-1 backdrop-blur-md outline-none focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#5d77ff99]"
+                    className="h-10 w-14 shrink-0 cursor-pointer rounded-lg border border-[var(--border-soft)] bg-[var(--field)] p-1 backdrop-blur-md outline-none focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[color-mix(in oklab, var(--accent) 72%, transparent)]"
                     value={/^#[0-9A-Fa-f]{6}$/.test(bead.color.trim()) ? bead.color.trim() : "#ffffff"}
                     onChange={(event) => onApplyPatch({ color: event.target.value })}
                     aria-label="Custom bead color"
@@ -302,9 +336,9 @@ export function KandiSingleBeadBar({
             </div>
 
             {mode === "text" && (
-              <p className="m-0 pt-0.5 font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[0.72rem] font-medium leading-[1.45] text-[#9ea5b3]">
-                Text beads render white on the strand. Press{" "}
-                <kbd className="rounded border border-[#ffffff24] bg-[#13151a] px-1 py-px font-mono text-[0.68rem] text-[#d8dde9]">
+              <p className="m-0 pt-0.5 k-type-meta leading-[1.45] text-[var(--text-muted)]">
+                Text beads render with black lettering on the strand. Press{" "}
+                <kbd className="rounded border border-[var(--border-soft)] bg-[var(--surface-2)] px-1 py-px font-mono k-type-meta text-[var(--text-strong)]">
                   Enter
                 </kbd>{" "}
                 to edit, then Enter again to confirm and move to the next bead.

@@ -9,27 +9,6 @@ export function saveDesign(design: KandiDesign): void {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(design));
 }
 
-export function downloadDesignAsFile(design: KandiDesign): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const safe =
-    design.name
-      .trim()
-      .replace(/[^\w\s-]+/g, "")
-      .replace(/\s+/g, "-") || "kandi-design";
-  const blob = new Blob([JSON.stringify(design, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `${safe}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
 export function loadDesign(): KandiDesign | null {
   if (typeof window === "undefined") {
     return null;

@@ -127,6 +127,12 @@ export const GUIDED_ELEVATION_STEP_DEG = 15;
 const GUIDED_CAMERA_SMOOTH_K = 14;
 const GUIDED_ROTATE_STEP_SMOOTH_K = 18;
 const GUIDED_ROTATE_STEP_EPS_RAD = 2e-4;
+const BRACELET_ENTRANCE_DURATION_S = 0.72;
+const BRACELET_ENTRANCE_SPIN_RAD = 0.34;
+
+function easeOutQuint(t: number): number {
+  return 1 - Math.pow(1 - t, 5);
+}
 
 function shortestAngleDelta(from: number, to: number): number {
   return ((to - from + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
@@ -264,6 +270,7 @@ function LetterBeadGroup({
   onHoveredBeadMeta,
   onBeadClick,
   useShadows,
+  interactive,
 }: {
   bead: Bead;
   selected: boolean;
@@ -278,6 +285,7 @@ function LetterBeadGroup({
   onHoveredBeadMeta?: (meta: HoveredBeadMeta | null) => void;
   onBeadClick: (event: BeadClickEvent) => void;
   useShadows: boolean;
+  interactive: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const camera = useThree((s) => s.camera);
@@ -311,44 +319,55 @@ function LetterBeadGroup({
         castShadow={useShadows}
         receiveShadow={useShadows}
         geometry={geometry}
-        onPointerOver={(event) => {
-          event.stopPropagation();
-          const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
-          const anchor = overlayAnchorFromRingPoint(
-            point,
-            braceletRevolveRad,
-            camera,
-            size,
-            gl,
-            anchorContainerRef.current,
-          );
-          onHoveredBeadMeta?.({ beadId: bead.id, anchor, isFront: !isBack });
-          setHoveredBeadId(bead.id);
-          invalidate();
-        }}
-        onPointerOut={(event) => {
-          event.stopPropagation();
-          onHoveredBeadMeta?.(null);
-          setHoveredBeadId((current) => (current === bead.id ? null : current));
-          invalidate();
-        }}
-        onPointerDown={(event) => {
-          event.stopPropagation();
-          if (event.button !== 0) {
-            return;
-          }
-          const native = event.nativeEvent as MouseEvent;
-          const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
-          const beadAnchor = overlayAnchorFromRingPoint(
-            point,
-            braceletRevolveRad,
-            camera,
-            size,
-            gl,
-            anchorContainerRef.current,
-          );
-          onBeadClick({ beadId: bead.id, rangeSelect: native.shiftKey, toggleSelect: native.metaKey || native.ctrlKey, isBack, beadAnchor });
-        }}
+        raycast={interactive ? undefined : ignoreRaycast}
+        {...(interactive
+          ? {
+              onPointerOver: (event) => {
+                event.stopPropagation();
+                const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
+                const anchor = overlayAnchorFromRingPoint(
+                  point,
+                  braceletRevolveRad,
+                  camera,
+                  size,
+                  gl,
+                  anchorContainerRef.current,
+                );
+                onHoveredBeadMeta?.({ beadId: bead.id, anchor, isFront: !isBack });
+                setHoveredBeadId(bead.id);
+                invalidate();
+              },
+              onPointerOut: (event) => {
+                event.stopPropagation();
+                onHoveredBeadMeta?.(null);
+                setHoveredBeadId((current) => (current === bead.id ? null : current));
+                invalidate();
+              },
+              onPointerDown: (event) => {
+                event.stopPropagation();
+                if (event.button !== 0) {
+                  return;
+                }
+                const native = event.nativeEvent as MouseEvent;
+                const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
+                const beadAnchor = overlayAnchorFromRingPoint(
+                  point,
+                  braceletRevolveRad,
+                  camera,
+                  size,
+                  gl,
+                  anchorContainerRef.current,
+                );
+                onBeadClick({
+                  beadId: bead.id,
+                  rangeSelect: native.shiftKey,
+                  toggleSelect: native.metaKey || native.ctrlKey,
+                  isBack,
+                  beadAnchor,
+                });
+              },
+            }
+          : {})}
       >
         <meshStandardMaterial color={bodyColor} roughness={0.38} metalness={0.04} flatShading={false} />
       </mesh>
@@ -389,6 +408,7 @@ function LetterBeadGroups({
   onHoveredBeadMeta,
   onBeadClick,
   useShadows,
+  interactive,
 }: {
   beads: Bead[];
   selectedIdSet: ReadonlySet<string>;
@@ -403,6 +423,7 @@ function LetterBeadGroups({
   onHoveredBeadMeta?: (meta: HoveredBeadMeta | null) => void;
   onBeadClick: (event: BeadClickEvent) => void;
   useShadows: boolean;
+  interactive: boolean;
 }) {
   const labeledBeads = useMemo(() => beads.filter((bead) => bead.label && bead.label.length > 0), [beads]);
 
@@ -426,6 +447,7 @@ function LetterBeadGroups({
             onHoveredBeadMeta={onHoveredBeadMeta}
             onBeadClick={onBeadClick}
             useShadows={useShadows}
+            interactive={interactive}
           />
         );
       })}
@@ -452,6 +474,7 @@ export type GuidedCameraPreset = "bracelet" | "top";
 interface KandiCanvasProps {
   beads: Bead[];
   selectedIds: string[];
+  editingEnabled?: boolean;
   activeBeadId?: string | null;
   /** Increment from the shell to snap orbit + bracelet revolution to defaults. */
   orbitResetToken: number;
@@ -547,6 +570,7 @@ function AnimatedRoundBeadInstance({
   setHoveredBeadId,
   onHoveredBeadMeta,
   onBeadClick,
+  interactive,
 }: {
   bead: Bead;
   selected: boolean;
@@ -559,6 +583,7 @@ function AnimatedRoundBeadInstance({
   setHoveredBeadId: Dispatch<SetStateAction<string | null>>;
   onHoveredBeadMeta?: (meta: HoveredBeadMeta | null) => void;
   onBeadClick: (event: BeadClickEvent) => void;
+  interactive: boolean;
 }) {
   const instanceRef = useRef<THREE.Group>(null);
   const camera = useThree((s) => s.camera);
@@ -595,44 +620,55 @@ function AnimatedRoundBeadInstance({
       color={displayColor}
       rotation={rotation}
       scale={1}
-      onPointerOver={(event) => {
-        event.stopPropagation();
-        const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
-        const anchor = overlayAnchorFromRingPoint(
-          point,
-          braceletRevolveRad,
-          camera,
-          size,
-          gl,
-          anchorContainerRef.current,
-        );
-        onHoveredBeadMeta?.({ beadId: bead.id, anchor, isFront: !isBack });
-        setHoveredBeadId(bead.id);
-        invalidate();
-      }}
-      onPointerOut={(event) => {
-        event.stopPropagation();
-        onHoveredBeadMeta?.(null);
-        setHoveredBeadId((current) => (current === bead.id ? null : current));
-        invalidate();
-      }}
-      onPointerDown={(event) => {
-        event.stopPropagation();
-        if (event.button !== 0) {
-          return;
-        }
-        const native = event.nativeEvent as MouseEvent;
-        const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
-        const beadAnchor = overlayAnchorFromRingPoint(
-          point,
-          braceletRevolveRad,
-          camera,
-          size,
-          gl,
-          anchorContainerRef.current,
-        );
-        onBeadClick({ beadId: bead.id, rangeSelect: native.shiftKey, toggleSelect: native.metaKey || native.ctrlKey, isBack, beadAnchor });
-      }}
+      raycast={interactive ? undefined : ignoreRaycast}
+      {...(interactive
+        ? {
+            onPointerOver: (event) => {
+              event.stopPropagation();
+              const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
+              const anchor = overlayAnchorFromRingPoint(
+                point,
+                braceletRevolveRad,
+                camera,
+                size,
+                gl,
+                anchorContainerRef.current,
+              );
+              onHoveredBeadMeta?.({ beadId: bead.id, anchor, isFront: !isBack });
+              setHoveredBeadId(bead.id);
+              invalidate();
+            },
+            onPointerOut: (event) => {
+              event.stopPropagation();
+              onHoveredBeadMeta?.(null);
+              setHoveredBeadId((current) => (current === bead.id ? null : current));
+              invalidate();
+            },
+            onPointerDown: (event) => {
+              event.stopPropagation();
+              if (event.button !== 0) {
+                return;
+              }
+              const native = event.nativeEvent as MouseEvent;
+              const isBack = isBeadTooFarBack(point, braceletRevolveRad, camera, ringRadius);
+              const beadAnchor = overlayAnchorFromRingPoint(
+                point,
+                braceletRevolveRad,
+                camera,
+                size,
+                gl,
+                anchorContainerRef.current,
+              );
+              onBeadClick({
+                beadId: bead.id,
+                rangeSelect: native.shiftKey,
+                toggleSelect: native.metaKey || native.ctrlKey,
+                isBack,
+                beadAnchor,
+              });
+            },
+          }
+        : {})}
     />
   );
 }
@@ -651,6 +687,7 @@ function PerforatedBeadInstances({
   onHoveredBeadMeta,
   onBeadClick,
   useShadows,
+  interactive,
 }: {
   beads: Bead[];
   selectedIdSet: ReadonlySet<string>;
@@ -665,6 +702,7 @@ function PerforatedBeadInstances({
   onHoveredBeadMeta?: (meta: HoveredBeadMeta | null) => void;
   onBeadClick: (event: BeadClickEvent) => void;
   useShadows: boolean;
+  interactive: boolean;
 }) {
   return (
     <Instances
@@ -675,7 +713,7 @@ function PerforatedBeadInstances({
       castShadow={useShadows}
       receiveShadow={useShadows}
     >
-      <meshPhysicalMaterial roughness={0.14} metalness={0.01} clearcoat={1} clearcoatRoughness={0.07} ior={1.48} />
+      <meshStandardMaterial roughness={0.24} metalness={0} toneMapped={false} />
 
       {beads.map((bead) => {
         const point = points[bead.index];
@@ -694,10 +732,105 @@ function PerforatedBeadInstances({
             setHoveredBeadId={setHoveredBeadId}
             onHoveredBeadMeta={onHoveredBeadMeta}
             onBeadClick={onBeadClick}
+            interactive={interactive}
           />
         );
       })}
     </Instances>
+  );
+}
+
+export type KandiBraceletStageMeshesProps = {
+  beads: Bead[];
+  selectedIds: string[];
+  braceletSpinRad: number;
+  interactive: boolean;
+  ringRadius: number;
+  strandTubeRadius: number;
+  torusRadialSegments: number;
+  torusTubularSegments: number;
+  points: ReturnType<typeof getRingPoints>;
+  perforatedBeadGeometry: THREE.BufferGeometry;
+  perforatedLetterBeadGeometry: THREE.BufferGeometry;
+  useShadows: boolean;
+  anchorContainerRef: RefObject<HTMLElement | null>;
+  hoveredBeadId: string | null;
+  setHoveredBeadId: Dispatch<SetStateAction<string | null>>;
+  onHoveredBeadMeta?: (meta: HoveredBeadMeta | null) => void;
+  onBeadClick: (event: BeadClickEvent) => void;
+};
+
+/** Strand + instanced beads + letter beads; shared by `KandiCanvas` and read-only showcase canvases. */
+export function KandiBraceletStageMeshes({
+  beads,
+  selectedIds,
+  braceletSpinRad,
+  interactive,
+  ringRadius,
+  strandTubeRadius,
+  torusRadialSegments,
+  torusTubularSegments,
+  points,
+  perforatedBeadGeometry,
+  perforatedLetterBeadGeometry,
+  useShadows,
+  anchorContainerRef,
+  hoveredBeadId,
+  setHoveredBeadId,
+  onHoveredBeadMeta,
+  onBeadClick,
+}: KandiBraceletStageMeshesProps) {
+  const plainBeads = useMemo(() => beads.filter((bead) => !bead.label?.length), [beads]);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const multiSelectActive = selectedIds.length > 1;
+
+  return (
+    <group rotation={[0, 0, braceletSpinRad]}>
+      <mesh receiveShadow={useShadows} raycast={ignoreRaycast}>
+        <torusGeometry args={[ringRadius, strandTubeRadius, torusRadialSegments, torusTubularSegments]} />
+        <meshStandardMaterial
+          color="#1b1e24"
+          roughness={0.88}
+          metalness={0.04}
+          emissive="#0a0c10"
+          emissiveIntensity={0.15}
+        />
+      </mesh>
+
+      <PerforatedBeadInstances
+        beads={plainBeads}
+        selectedIdSet={selectedIdSet}
+        multiSelectActive={multiSelectActive}
+        geometry={perforatedBeadGeometry}
+        points={points}
+        braceletRevolveRad={braceletSpinRad}
+        ringRadius={ringRadius}
+        anchorContainerRef={anchorContainerRef}
+        hoveredBeadId={hoveredBeadId}
+        setHoveredBeadId={setHoveredBeadId}
+        onHoveredBeadMeta={onHoveredBeadMeta}
+        onBeadClick={onBeadClick}
+        useShadows={useShadows}
+        interactive={interactive}
+      />
+
+      <LetterBeadGroups
+        beads={beads}
+        selectedIdSet={selectedIdSet}
+        multiSelectActive={multiSelectActive}
+        points={points}
+        geometry={perforatedLetterBeadGeometry}
+        braceletRevolveRad={braceletSpinRad}
+        ringRadius={ringRadius}
+        anchorContainerRef={anchorContainerRef}
+        hoveredBeadId={hoveredBeadId}
+        setHoveredBeadId={setHoveredBeadId}
+        onHoveredBeadMeta={onHoveredBeadMeta}
+        onBeadClick={onBeadClick}
+        useShadows={useShadows}
+        interactive={interactive}
+      />
+    </group>
   );
 }
 
@@ -875,6 +1008,117 @@ function GuidedBraceletDragRevolve({ onRevolveDeltaRad }: { onRevolveDeltaRad: (
   return null;
 }
 
+function BraceletEntranceMotion({ groupRef }: { groupRef: RefObject<THREE.Group | null> }) {
+  const invalidate = useThree((s) => s.invalidate);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const startAtRef = useRef<number | null>(null);
+  const completedRef = useRef(false);
+  const materialsRef = useRef<Array<{ material: THREE.Material; transparent: boolean }>>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReducedMotion(media.matches);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) {
+      return;
+    }
+    const found: Array<{ material: THREE.Material; transparent: boolean }> = [];
+    group.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) {
+        return;
+      }
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((mat) => {
+        if (!mat) {
+          return;
+        }
+        if (!found.some((entry) => entry.material === mat)) {
+          found.push({ material: mat, transparent: mat.transparent });
+        }
+      });
+    });
+    materialsRef.current = found;
+
+    if (reducedMotion) {
+      group.scale.setScalar(1);
+      group.position.set(0, 0, 0);
+      group.rotation.set(0, 0, 0);
+      materialsRef.current.forEach(({ material, transparent }) => {
+        material.transparent = transparent;
+        material.opacity = 1;
+        material.needsUpdate = true;
+      });
+      completedRef.current = true;
+      return;
+    }
+    group.scale.setScalar(0.84);
+    group.position.set(0, 0, -1.4);
+    group.rotation.set(0.06, 0, -BRACELET_ENTRANCE_SPIN_RAD);
+    materialsRef.current.forEach(({ material }) => {
+      material.transparent = true;
+      material.opacity = 0;
+      material.needsUpdate = true;
+    });
+    startAtRef.current = null;
+    completedRef.current = false;
+    invalidate();
+  }, [groupRef, invalidate, reducedMotion]);
+
+  useFrame((state) => {
+    if (completedRef.current || reducedMotion) {
+      return;
+    }
+    const group = groupRef.current;
+    if (!group) {
+      return;
+    }
+    if (startAtRef.current === null) {
+      startAtRef.current = state.clock.elapsedTime;
+    }
+    const elapsed = state.clock.elapsedTime - startAtRef.current;
+    const t = Math.min(1, elapsed / BRACELET_ENTRANCE_DURATION_S);
+    const eased = easeOutQuint(t);
+    const scale = THREE.MathUtils.lerp(0.84, 1, eased);
+    const z = THREE.MathUtils.lerp(-1.4, 0, eased);
+    const tiltX = THREE.MathUtils.lerp(0.06, 0, eased);
+    const spinZ = THREE.MathUtils.lerp(-BRACELET_ENTRANCE_SPIN_RAD, 0, eased);
+    const opacity = THREE.MathUtils.lerp(0, 1, eased);
+
+    group.scale.setScalar(scale);
+    group.position.z = z;
+    group.rotation.x = tiltX;
+    group.rotation.z = spinZ;
+    materialsRef.current.forEach(({ material }) => {
+      material.opacity = opacity;
+    });
+    invalidate();
+
+    if (t >= 1) {
+      completedRef.current = true;
+      group.scale.setScalar(1);
+      group.position.z = 0;
+      group.rotation.x = 0;
+      group.rotation.z = 0;
+      materialsRef.current.forEach(({ material, transparent }) => {
+        material.opacity = 1;
+        material.transparent = transparent;
+        material.needsUpdate = true;
+      });
+    }
+  });
+
+  return null;
+}
+
 function BraceletFocusToFrontDrive({
   pendingFocusBeadId,
   beads,
@@ -959,6 +1203,7 @@ function CameraRig() {
 export function KandiCanvas({
   beads,
   selectedIds,
+  editingEnabled = true,
   activeBeadId = null,
   orbitResetToken,
   guidedPreset = "bracelet",
@@ -1001,9 +1246,6 @@ export function KandiCanvas({
   const ringRadius = useMemo(() => braceletRingRadius(beads.length), [beads.length]);
   const strandTubeRadius = useMemo(() => braceletStrandTubeRadius(beads.length), [beads.length]);
   const points = useMemo(() => getRingPoints(beads.length, ringRadius), [beads.length, ringRadius]);
-  const plainBeads = useMemo(() => beads.filter((bead) => !bead.label?.length), [beads]);
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const multiSelectActive = selectedIds.length > 1;
   const isLowMemoryDevice = useMemo(() => {
     if (typeof navigator === "undefined") {
       return false;
@@ -1019,6 +1261,7 @@ export function KandiCanvas({
   const torusTubularSegments = isMemoryConstrained ? 96 : 160;
 
   const braceletSpinZ = braceletRevolveRad;
+  const braceletEntranceGroupRef = useRef<THREE.Group>(null);
   const effectiveAnchorContainerRef = anchorContainerRef ?? nullAnchorContainerRef;
   const [hoveredBeadId, setHoveredBeadId] = useState<string | null>(null);
 
@@ -1038,81 +1281,66 @@ export function KandiCanvas({
         gl={{ alpha: true, antialias: !isMemoryConstrained, powerPreference: "low-power", stencil: false }}
         style={{ background: "transparent" }}
         onPointerMissed={(event) => {
+          if (!editingEnabled) {
+            return;
+          }
           if (event.shiftKey === false) {
             onClearSelection();
           }
         }}
       >
-        <ambientLight intensity={0.56} />
+        <ambientLight intensity={1.05} />
         <directionalLight
           position={[2, -3, 8]}
-          intensity={0.98}
+          intensity={1.45}
           color="#d6dded"
           castShadow={useCanvasShadows}
           shadow-mapSize-width={directionalShadowMapSize}
           shadow-mapSize-height={directionalShadowMapSize}
         />
-        <directionalLight position={[-6, 4, 2]} intensity={0.35} color="#5870d9" />
+        <directionalLight position={[-6, 4, 2]} intensity={0.62} color="#7a95ff" />
 
-        <group rotation={[0, 0, braceletSpinZ]}>
-          <mesh receiveShadow={useCanvasShadows} raycast={ignoreRaycast}>
-            <torusGeometry args={[ringRadius, strandTubeRadius, torusRadialSegments, torusTubularSegments]} />
-            <meshStandardMaterial
-              color="#1b1e24"
-              roughness={0.88}
-              metalness={0.04}
-              emissive="#0a0c10"
-              emissiveIntensity={0.15}
+        {editingEnabled ? (
+          <group ref={braceletEntranceGroupRef}>
+            <KandiBraceletStageMeshes
+              beads={beads}
+              selectedIds={selectedIds}
+              braceletSpinRad={braceletSpinZ}
+              interactive
+              ringRadius={ringRadius}
+              strandTubeRadius={strandTubeRadius}
+              torusRadialSegments={torusRadialSegments}
+              torusTubularSegments={torusTubularSegments}
+              points={points}
+              perforatedBeadGeometry={perforatedBeadGeometry}
+              perforatedLetterBeadGeometry={perforatedLetterBeadGeometry}
+              useShadows={useCanvasShadows}
+              anchorContainerRef={effectiveAnchorContainerRef}
+              hoveredBeadId={hoveredBeadId}
+              setHoveredBeadId={setHoveredBeadId}
+              onHoveredBeadMeta={onHoveredBeadMeta}
+              onBeadClick={onBeadClick}
             />
-          </mesh>
-
-          <PerforatedBeadInstances
-            beads={plainBeads}
-            selectedIdSet={selectedIdSet}
-            multiSelectActive={multiSelectActive}
-            geometry={perforatedBeadGeometry}
-            points={points}
-            braceletRevolveRad={braceletSpinZ}
-            ringRadius={ringRadius}
-            anchorContainerRef={effectiveAnchorContainerRef}
-            hoveredBeadId={hoveredBeadId}
-            setHoveredBeadId={setHoveredBeadId}
-            onHoveredBeadMeta={onHoveredBeadMeta}
-            onBeadClick={onBeadClick}
-            useShadows={useCanvasShadows}
-          />
-
-          <LetterBeadGroups
-            beads={beads}
-            selectedIdSet={selectedIdSet}
-            multiSelectActive={multiSelectActive}
-            points={points}
-            geometry={perforatedLetterBeadGeometry}
-            braceletRevolveRad={braceletSpinZ}
-            ringRadius={ringRadius}
-            anchorContainerRef={effectiveAnchorContainerRef}
-            hoveredBeadId={hoveredBeadId}
-            setHoveredBeadId={setHoveredBeadId}
-            onHoveredBeadMeta={onHoveredBeadMeta}
-            onBeadClick={onBeadClick}
-            useShadows={useCanvasShadows}
-          />
-        </group>
+          </group>
+        ) : null}
 
         <CameraRig />
+        {editingEnabled ? <BraceletEntranceMotion groupRef={braceletEntranceGroupRef} /> : null}
         <ResetOrbitEffect orbitResetToken={orbitResetToken} />
         <GuidedCameraSmoothDrive
           guidedPreset={guidedPreset}
           guidedElevationDeg={guidedElevationDeg}
           orbitResetToken={orbitResetToken}
         />
-        <GuidedBraceletStepEffect
-          guidedRotateTick={guidedRotateTick}
-          guidedRotateDeltaDeg={guidedRotateDeltaDeg}
-          onRevolveDeltaRad={applyBraceletRevolveDelta}
-        />
-        <GuidedBraceletDragRevolve onRevolveDeltaRad={applyBraceletRevolveDelta} />
-        {onFocusComplete ? (
+        {editingEnabled ? (
+          <GuidedBraceletStepEffect
+            guidedRotateTick={guidedRotateTick}
+            guidedRotateDeltaDeg={guidedRotateDeltaDeg}
+            onRevolveDeltaRad={applyBraceletRevolveDelta}
+          />
+        ) : null}
+        {editingEnabled ? <GuidedBraceletDragRevolve onRevolveDeltaRad={applyBraceletRevolveDelta} /> : null}
+        {editingEnabled && onFocusComplete ? (
           <BraceletFocusToFrontDrive
             pendingFocusBeadId={pendingFocusBeadId}
             beads={beads}
@@ -1122,15 +1350,17 @@ export function KandiCanvas({
             onFocusComplete={onFocusComplete}
           />
         ) : null}
-        <ActiveBeadMetaDrive
-          activeBeadId={activeBeadId}
-          beads={beads}
-          points={points}
-          braceletRevolveRad={braceletSpinZ}
-          ringRadius={ringRadius}
-          anchorContainerRef={effectiveAnchorContainerRef}
-          onActiveBeadMeta={onActiveBeadMeta}
-        />
+        {editingEnabled ? (
+          <ActiveBeadMetaDrive
+            activeBeadId={activeBeadId}
+            beads={beads}
+            points={points}
+            braceletRevolveRad={braceletSpinZ}
+            ringRadius={ringRadius}
+            anchorContainerRef={effectiveAnchorContainerRef}
+            onActiveBeadMeta={onActiveBeadMeta}
+          />
+        ) : null}
       </Canvas>
     </div>
   );

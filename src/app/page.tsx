@@ -1,5 +1,5 @@
-import { KandiEditor } from "@/components/kandi/KandiEditor";
+import { KandiLandingPage } from "@/components/kandi/KandiLandingPage";
 
 export default function Home() {
-  return <KandiEditor />;
+  return <KandiLandingPage />;
 }

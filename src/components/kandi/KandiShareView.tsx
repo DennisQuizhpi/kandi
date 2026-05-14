@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
-  GUIDED_ELEVATION_DEFAULT_DEG,
-  GUIDED_ELEVATION_MAX_DEG,
-  GUIDED_ELEVATION_MIN_DEG,
-  GUIDED_ELEVATION_STEP_DEG,
-  KandiCanvas,
-} from "@/components/kandi/KandiCanvas";
+  BRACELET_VISUAL_DEFAULT_DISTANCE,
+  BRACELET_VISUAL_DEFAULT_POLAR_DEG,
+  BRACELET_VISUAL_DEFAULT_AZIMUTH_DEG,
+  BRACELET_VISUAL_POLAR_MAX_DEG,
+  BRACELET_VISUAL_POLAR_MIN_DEG,
+  BRACELET_VISUAL_POLAR_STEP_DEG,
+  braceletShowcaseEyeFromSpherical,
+  KandiBraceletVisualCanvas,
+} from "@/components/kandi/KandiBraceletVisualCanvas";
 import { KandiButton } from "@/components/kandi/KandiButton";
 import { KandiPublicShareActions } from "@/components/kandi/KandiPublicShareActions";
+import { kandiElevatedSurfaceClassName, kandiElevatedSurfaceForcedClassName } from "@/lib/kandi/constants";
 import type { KandiDesign } from "@/lib/kandi/types";
+
+/** World-space shift for the share-page bracelet (try negative Y to move the ring “down” in frame and show the top arc). */
+const SHARE_BRACELET_WORLD_OFFSET: readonly [number, number, number] = [0, -2.35, 0];
+
+const ROTATE_STEP_RAD = (22 * Math.PI) / 180;
 
 export function KandiShareView({
   design,
@@ -28,70 +37,100 @@ export function KandiShareView({
   remixUrl: string;
   createdAt: string;
 }) {
-  const [guidedElevationDeg, setGuidedElevationDeg] = useState(GUIDED_ELEVATION_DEFAULT_DEG);
-  const [orbitResetToken, setOrbitResetToken] = useState(0);
+  const [cameraPolarDeg, setCameraPolarDeg] = useState(BRACELET_VISUAL_DEFAULT_POLAR_DEG);
+  const [braceletSpinRad, setBraceletSpinRad] = useState(0);
+  const sharedDate = new Date(createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const cameraTarget = useMemo(
+    (): readonly [number, number, number] => [0, SHARE_BRACELET_WORLD_OFFSET[1], 0],
+    [],
+  );
+
+  const cameraPosition = useMemo(
+    () =>
+      braceletShowcaseEyeFromSpherical({
+        distance: BRACELET_VISUAL_DEFAULT_DISTANCE,
+        polarDeg: cameraPolarDeg,
+        azimuthDeg: BRACELET_VISUAL_DEFAULT_AZIMUTH_DEG,
+        target: cameraTarget,
+      }),
+    [cameraPolarDeg, cameraTarget],
+  );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0d0f14] text-[#edf1f8]">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center opacity-40"
-        style={{ backgroundImage: "url('/images/kandi-bg.jpg')" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 [background:radial-gradient(circle_at_22%_-10%,rgba(56,107,255,0.16)_0,transparent_42%),radial-gradient(circle_at_80%_0%,rgba(79,146,90,0.1)_0,transparent_38%),linear-gradient(180deg,rgba(16,18,23,0.8)_0%,rgba(15,17,22,0.86)_55%,rgba(13,15,20,0.92)_100%)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.08] [background-size:3px_3px] [background-image:radial-gradient(circle,rgba(255,255,255,0.7)_0.5px,transparent_0.6px)]"
-      />
-
+    <main className="relative min-h-screen overflow-hidden bg-[var(--surface-0)] text-[var(--text-strong)]">
       <header className="relative z-20 flex items-center justify-between px-6 pb-4 pt-7 sm:px-10 sm:pt-8">
-        <p className="font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[1.05rem] font-semibold tracking-[-0.02em] text-[#f1f4fa]">
-          kandi share
+        <p className="k-type-display tracking-[0.01em] text-[var(--text-strong)]">kandi share</p>
+        <p className={`k-type-label rounded-full px-3 py-1 text-[var(--text-muted)] ${kandiElevatedSurfaceClassName}`}>
+          shared {sharedDate}
         </p>
-        <p className="text-[0.82rem] text-[#a2adbf]">shared {new Date(createdAt).toLocaleDateString()}</p>
       </header>
 
-      <section className="relative z-20 mx-auto flex w-full max-w-[58rem] flex-col items-center px-6 pt-[9vh] text-center sm:px-10">
-        <div className="w-full max-w-[36rem] rounded-2xl border border-[#ffffff16] bg-[#171b23bf] px-5 py-5 shadow-[0_20px_54px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:px-7 sm:py-6">
-          <h1 className="font-['Soehne','Avenir_Next','SF_Pro_Text','Segoe_UI',sans-serif] text-[1.8rem] font-semibold tracking-[-0.03em] text-[#f0f3fa] sm:text-[2.25rem]">
+      <section className="relative z-20 mx-auto flex w-full max-w-[72rem] flex-col items-center px-6 pt-[7vh] text-center sm:px-10">
+        <div className="k-share-card-enter relative w-full max-w-[44rem] px-3 py-4 sm:px-4 sm:py-5">
+          <p className="k-type-label text-[var(--text-muted)]">Shared with care from Kandi Maker</p>
+          <h1 className="mt-2 k-type-headline text-[30px] leading-[36px] text-[var(--text-strong)] sm:text-[44px] sm:leading-[50px]">
             {title}
           </h1>
-          {message ? <p className="mt-2 text-[1rem] text-[#c6cfde] sm:text-[1.15rem]">{message}</p> : null}
-          <div className="mt-7">
+          <p className="mx-auto mt-3 max-w-[33rem] k-type-body text-[15px] text-[var(--text-muted)] sm:text-[18px] sm:leading-[28px]">
+            Made for a moment, remixed for your next one.
+          </p>
+          {message ? (
+            <div className={`mx-auto mt-5 max-w-[32rem] rounded-xl px-4 py-3 text-left ${kandiElevatedSurfaceClassName}`}>
+              <p className="k-type-meta uppercase tracking-[0.08em] text-[var(--text-muted)]">note</p>
+              <p className="mt-1.5 k-type-body text-[var(--text-strong)]">{message}</p>
+            </div>
+          ) : null}
+          <div className="mt-7 border-t border-[var(--border-soft)] pt-5">
             <KandiPublicShareActions shareUrl={shareUrl} remixUrl={remixUrl} />
           </div>
         </div>
       </section>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[58vh] sm:h-[62vh]">
-        <div className="pointer-events-auto h-full">
-          <KandiCanvas
+      <div className="pointer-events-none fixed inset-x-0 bottom-[-17vh] z-10 h-[76vh] sm:bottom-[-18vh] sm:h-[80vh]">
+        <div className="pointer-events-none h-full">
+          <KandiBraceletVisualCanvas
+            className="relative h-full min-h-0 w-full pointer-events-none"
             beads={design.beads}
-            selectedIds={[]}
-            activeBeadId={null}
-            orbitResetToken={orbitResetToken}
-            guidedPreset="bracelet"
-            guidedElevationDeg={guidedElevationDeg}
-            guidedRotateTick={0}
-            guidedRotateDeltaDeg={0}
-            onBeadClick={() => {}}
-            onClearSelection={() => {}}
+            cameraPosition={cameraPosition}
+            cameraTarget={cameraTarget}
+            braceletRotationRad={braceletSpinRad}
+            braceletWorldOffset={SHARE_BRACELET_WORLD_OFFSET}
           />
         </div>
       </div>
 
-      <div role="toolbar" aria-label="Adjust camera view" className="fixed bottom-8 right-6 z-30 flex flex-col gap-2 sm:bottom-10 sm:right-8">
+      <div
+        role="toolbar"
+        aria-label="Adjust bracelet view"
+        className={`fixed bottom-8 right-6 z-30 flex flex-wrap items-center gap-2 rounded-full p-2 sm:bottom-10 sm:right-8 ${kandiElevatedSurfaceClassName}`}
+      >
         <KandiButton
           variant="compact"
-          className="!h-11 !w-11 !rounded-full !border-[#ffffff2a] !bg-[#1a1c2180] !p-0 backdrop-blur-xl"
-          disabled={guidedElevationDeg >= GUIDED_ELEVATION_MAX_DEG}
+          className="!h-10 !w-10 !rounded-full !p-0"
+          onClick={() => setBraceletSpinRad((r) => r - ROTATE_STEP_RAD)}
+          aria-label="Rotate bracelet left"
+        >
+          <span className="icon-[material-symbols--rotate-left-rounded] inline-block shrink-0 text-[18px] leading-none" aria-hidden />
+        </KandiButton>
+        <KandiButton
+          variant="compact"
+          className="!h-10 !w-10 !rounded-full !p-0"
+          onClick={() => setBraceletSpinRad((r) => r + ROTATE_STEP_RAD)}
+          aria-label="Rotate bracelet right"
+        >
+          <span className="icon-[material-symbols--rotate-right-rounded] inline-block shrink-0 text-[18px] leading-none" aria-hidden />
+        </KandiButton>
+        <KandiButton
+          variant="compact"
+          className={`!h-10 !w-10 !rounded-full !p-0 ${kandiElevatedSurfaceForcedClassName}`}
+          disabled={cameraPolarDeg <= BRACELET_VISUAL_POLAR_MIN_DEG}
           onClick={() =>
-            setGuidedElevationDeg((deg) =>
-              Math.min(GUIDED_ELEVATION_MAX_DEG, deg + GUIDED_ELEVATION_STEP_DEG),
-            )
+            setCameraPolarDeg((deg) => Math.max(BRACELET_VISUAL_POLAR_MIN_DEG, deg - BRACELET_VISUAL_POLAR_STEP_DEG))
           }
           aria-label="Raise camera"
         >
@@ -99,12 +138,10 @@ export function KandiShareView({
         </KandiButton>
         <KandiButton
           variant="compact"
-          className="!h-11 !w-11 !rounded-full !border-[#ffffff2a] !bg-[#1a1c2180] !p-0 backdrop-blur-xl"
-          disabled={guidedElevationDeg <= GUIDED_ELEVATION_MIN_DEG}
+          className={`!h-10 !w-10 !rounded-full !p-0 ${kandiElevatedSurfaceForcedClassName}`}
+          disabled={cameraPolarDeg >= BRACELET_VISUAL_POLAR_MAX_DEG}
           onClick={() =>
-            setGuidedElevationDeg((deg) =>
-              Math.max(GUIDED_ELEVATION_MIN_DEG, deg - GUIDED_ELEVATION_STEP_DEG),
-            )
+            setCameraPolarDeg((deg) => Math.min(BRACELET_VISUAL_POLAR_MAX_DEG, deg + BRACELET_VISUAL_POLAR_STEP_DEG))
           }
           aria-label="Lower camera"
         >
@@ -112,8 +149,11 @@ export function KandiShareView({
         </KandiButton>
         <KandiButton
           variant="compact"
-          className="!h-11 !w-11 !rounded-full !border-[#ffffff2a] !bg-[#1a1c2180] !p-0 backdrop-blur-xl"
-          onClick={() => setOrbitResetToken((token) => token + 1)}
+          className={`!h-10 !w-10 !rounded-full !p-0 ${kandiElevatedSurfaceForcedClassName}`}
+          onClick={() => {
+            setBraceletSpinRad(0);
+            setCameraPolarDeg(BRACELET_VISUAL_DEFAULT_POLAR_DEG);
+          }}
           aria-label="Reset view"
         >
           <span className="icon-[material-symbols--restart-alt-rounded] inline-block shrink-0 text-[20px] leading-none" aria-hidden />

@@ -64,7 +64,7 @@ export default async function SharedPostcardPage({
   }
 
   const shareUrl = `${origin}/p/${shared.slug}`;
-  const remixUrl = `/?remix=${shared.slug}`;
+  const remixUrl = `/editor?remix=${shared.slug}`;
   return (
     <KandiShareView
       design={shared.design}

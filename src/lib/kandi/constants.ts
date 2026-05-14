@@ -2,8 +2,8 @@ import { BeadShape } from "./types";
 
 export const DEFAULT_BEAD_COUNT = 32;
 export const MIN_BEAD_COUNT = 8;
-export const MAX_BEAD_COUNT = 256;
-export const EDITOR_MAX_BEAD_COUNT = 40;
+export const MAX_BEAD_COUNT = 40;
+export const EDITOR_MAX_BEAD_COUNT = MAX_BEAD_COUNT;
 
 /** Strand circle radius in world units when the design has {@link DEFAULT_BEAD_COUNT} beads. */
 export const RING_RADIUS = 5.5;
@@ -39,5 +39,13 @@ export const BASE_COLORS = [
 ];
 
 export const STORAGE_KEY = "kandi:v1:design";
+
+/** Matches `:root` `--elevated-surface-*` (keyboard-shortcuts panel reference). */
+export const kandiElevatedSurfaceClassName =
+  "border border-[var(--elevated-surface-border)] bg-[var(--elevated-surface-bg)] shadow-[var(--elevated-surface-shadow)]";
+
+/** Same tokens with `!` so classes win over `KandiButton` variant defaults. */
+export const kandiElevatedSurfaceForcedClassName =
+  "!border !border-[var(--elevated-surface-border)] !bg-[var(--elevated-surface-bg)] !shadow-[var(--elevated-surface-shadow)]";
 
 export const LABEL_CHAR_LIMIT = 1;

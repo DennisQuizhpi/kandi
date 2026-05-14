@@ -21,6 +21,11 @@ export type KandiAction =
   | { type: "insertBeadAfter"; beadId: string }
   | { type: "duplicateBead"; beadId: string }
   | { type: "duplicateSelection"; ids: string[] }
+  | {
+      type: "pasteBeadAfter";
+      afterBeadId: string;
+      template: Pick<Bead, "color" | "shape"> & { label?: string };
+    }
   | { type: "moveSelectionToTarget"; ids: string[]; targetId: string }
   | { type: "moveSelectionStep"; ids: string[]; direction: "left" | "right" }
   | { type: "addWord"; word: string }
@@ -362,9 +367,11 @@ export function kandiReducer(state: KandiState, action: KandiAction): KandiState
         const insertAt = action.type === "insertBeadBefore" ? targetIndex : targetIndex + 1;
         const targetBead = currentBeads[targetIndex];
         const nextBeads: Bead[] = [];
+        let insertedBead: Bead | null = null;
         for (let i = 0; i < currentBeads.length + 1; i += 1) {
           if (i === insertAt) {
             const inserted = makeInsertedRoundBead(i, targetBead.color);
+            insertedBead = inserted;
             nextBeads.push(inserted);
             continue;
           }
@@ -382,7 +389,56 @@ export function kandiReducer(state: KandiState, action: KandiAction): KandiState
           },
           selection: {
             ...currentState.selection,
-            selectedIds: currentState.selection.selectedIds,
+            selectedIds: insertedBead ? [insertedBead.id] : currentState.selection.selectedIds,
+            mode: "single",
+          },
+        };
+      });
+    }
+    case "pasteBeadAfter": {
+      return withHistory(state, (currentState) => {
+        const currentBeads = currentState.design.beads;
+        if (currentBeads.length >= MAX_BEAD_COUNT) {
+          return currentState;
+        }
+        const targetIndex = currentBeads.findIndex((bead) => bead.id === action.afterBeadId);
+        if (targetIndex === -1) {
+          return currentState;
+        }
+        const insertAt = targetIndex + 1;
+        const { template } = action;
+        let inserted: Bead = {
+          id: `bead-${insertAt}-${Math.random().toString(36).slice(2, 9)}`,
+          index: insertAt,
+          shape: template.shape,
+          color: template.color,
+        };
+        if (template.label !== undefined && template.label.length > 0) {
+          inserted = { ...inserted, label: template.label };
+        }
+        inserted = coerceLetterBeadShape(inserted);
+        const nextBeads: Bead[] = [];
+        for (let i = 0; i < currentBeads.length + 1; i += 1) {
+          if (i === insertAt) {
+            nextBeads.push(inserted);
+            continue;
+          }
+          const src = currentBeads[i > insertAt ? i - 1 : i];
+          nextBeads.push(cloneBead(src, i));
+        }
+
+        return {
+          ...currentState,
+          design: {
+            ...currentState.design,
+            beadCount: nextBeads.length,
+            beads: nextBeads,
+            updatedAt: new Date().toISOString(),
+          },
+          selection: {
+            ...currentState.selection,
+            selectedIds: [inserted.id],
+            mode: "single",
           },
         };
       });
